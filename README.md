@@ -20,17 +20,18 @@ The project currently uses features including:
 
 ## Current results
 
-The current stage compares a simple operational baseline, Linear Regression and Random Forest on the same unseen 2026 test period.
+The current stage compares a simple operational baseline, Linear Regression, Random Forest and Gradient Boosting on the same unseen 2026 test period.
 
 | Model | Test MAE | Improvement vs baseline |
 |---|---:|---:|
 | 7-day lag baseline | 1,182.84 | — |
 | Linear Regression | 1,029.12 | ~13.0% |
-| **Random Forest** | **903.34** | **~23.6%** |
+| Random Forest | 903.34 | ~23.6% |
+| **Gradient Boosting** | **854.90** | **~27.7%** |
 
 **MAE (Mean Absolute Error)** measures the average absolute difference between predicted and actual parcel volumes. Lower is better.
 
-Random Forest is currently the best model. It reduces the average absolute error by about **279 parcels per depot-day** compared with the 7-day baseline and by about **12.2%** compared with Linear Regression.
+Gradient Boosting is currently the best model. It reduces the average absolute error by about **328 parcels per depot-day** compared with the 7-day baseline and by about **5.4%** compared with Random Forest.
 
 ## Why this problem matters
 
@@ -55,7 +56,8 @@ logistics-parcel-volume-forecasting/
 │   └── README.md
 ├── notebooks/
 │   ├── 01_baseline_and_linear_regression.ipynb
-│   └── 02_random_forest.ipynb
+│   ├── 02_random_forest.ipynb
+│   └── 03_gradient_boosting.ipynb
 └── src/
     └── generate_data.py
 ```
@@ -138,6 +140,28 @@ The strongest signal is `lag_7`, meaning the model relies heavily on parcel volu
 
 These are model feature importances, not causal effects.
 
+### 7. Gradient Boosting
+
+A `GradientBoostingRegressor` is trained using the same features and test period so that the comparison remains fair.
+
+Its test MAE is **854.90**, making it the strongest model so far.
+
+#### Feature importance
+
+| Feature | Importance |
+|---|---:|
+| `lag_7` | **0.7424** |
+| `is_bank_holiday` | 0.0949 |
+| `day_of_week_num` | 0.0817 |
+| `lag_1` | 0.0491 |
+| `is_christmas_peak` | 0.0174 |
+| `is_black_friday_period` | 0.0101 |
+| `month` | 0.0044 |
+
+Gradient Boosting reaches a similar conclusion to Random Forest: `lag_7` is by far the strongest predictor, while bank holidays and day of week provide useful calendar context.
+
+These importances describe the fitted model; they should not be interpreted as causal effects.
+
 ## Running the project
 
 Clone the repository and install the dependencies:
@@ -157,6 +181,7 @@ Then open the notebooks in order:
 ```text
 notebooks/01_baseline_and_linear_regression.ipynb
 notebooks/02_random_forest.ipynb
+notebooks/03_gradient_boosting.ipynb
 ```
 
 Run each notebook from top to bottom.
@@ -165,7 +190,6 @@ Run each notebook from top to bottom.
 
 The next stages of the project will include:
 
-- Gradient Boosting
 - additional rolling and lag features
 - more robust time-series validation
 - deeper model explainability
