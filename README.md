@@ -20,16 +20,17 @@ The project currently uses features including:
 
 ## Current results
 
-The first stage compares a simple operational baseline with a Linear Regression model on the same unseen 2026 test period.
+The current stage compares a simple operational baseline, Linear Regression and Random Forest on the same unseen 2026 test period.
 
 | Model | Test MAE | Improvement vs baseline |
 |---|---:|---:|
 | 7-day lag baseline | 1,182.84 | — |
-| Linear Regression | **1,029.12** | **~13.0%** |
+| Linear Regression | 1,029.12 | ~13.0% |
+| **Random Forest** | **903.34** | **~23.6%** |
 
 **MAE (Mean Absolute Error)** measures the average absolute difference between predicted and actual parcel volumes. Lower is better.
 
-At this stage, Linear Regression reduces the average forecasting error by roughly 154 parcels per depot-day compared with simply using the same day from the previous week.
+Random Forest is currently the best model. It reduces the average absolute error by about **279 parcels per depot-day** compared with the 7-day baseline and by about **12.2%** compared with Linear Regression.
 
 ## Why this problem matters
 
@@ -53,7 +54,8 @@ logistics-parcel-volume-forecasting/
 ├── data/
 │   └── README.md
 ├── notebooks/
-│   └── 01_baseline_and_linear_regression.ipynb
+│   ├── 01_baseline_and_linear_regression.ipynb
+│   └── 02_random_forest.ipynb
 └── src/
     └── generate_data.py
 ```
@@ -114,6 +116,28 @@ This gives:
 
 Linear Regression is trained as the first machine-learning benchmark. Its MAE of **1,029.12** beats the equivalent test-period baseline MAE of **1,182.84**.
 
+### 6. Random Forest
+
+A `RandomForestRegressor` with 100 trees is then trained using the same features and the same time-based train/test split.
+
+Its test MAE is **903.34**, making it the strongest model so far.
+
+#### Feature importance
+
+| Feature | Importance |
+|---|---:|
+| `lag_7` | **0.7471** |
+| `is_bank_holiday` | 0.0884 |
+| `day_of_week_num` | 0.0714 |
+| `lag_1` | 0.0546 |
+| `is_christmas_peak` | 0.0162 |
+| `month` | 0.0126 |
+| `is_black_friday_period` | 0.0098 |
+
+The strongest signal is `lag_7`, meaning the model relies heavily on parcel volume from the same depot and day one week earlier. Calendar effects such as bank holidays and day of week provide additional adjustments.
+
+These are model feature importances, not causal effects.
+
 ## Running the project
 
 Clone the repository and install the dependencies:
@@ -128,23 +152,23 @@ Generate the synthetic dataset:
 python src/generate_data.py
 ```
 
-Then open:
+Then open the notebooks in order:
 
 ```text
 notebooks/01_baseline_and_linear_regression.ipynb
+notebooks/02_random_forest.ipynb
 ```
 
-Run the notebook from top to bottom.
+Run each notebook from top to bottom.
 
 ## Planned improvements
 
 The next stages of the project will include:
 
-- Random Forest regression
 - Gradient Boosting
 - additional rolling and lag features
-- model comparison on a consistent test period
-- feature importance / model explainability
+- more robust time-series validation
+- deeper model explainability
 - visual comparison of predictions vs actual demand
 - a small Streamlit application for interactive forecasts
 
