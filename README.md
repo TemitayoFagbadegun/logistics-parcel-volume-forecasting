@@ -20,18 +20,19 @@ The project currently uses features including:
 
 ## Current results
 
-The current stage compares a simple operational baseline, Linear Regression, Random Forest and Gradient Boosting on the same unseen 2026 test period.
+The current stage compares the baseline and successive ML models on the same unseen 2026 test period.
 
 | Model | Test MAE | Improvement vs baseline |
 |---|---:|---:|
 | 7-day lag baseline | 1,182.84 | — |
 | Linear Regression | 1,029.12 | ~13.0% |
 | Random Forest | 903.34 | ~23.6% |
-| **Gradient Boosting** | **854.90** | **~27.7%** |
+| Gradient Boosting | 854.90 | ~27.7% |
+| **Enhanced Gradient Boosting** | **763.32** | **~35.5%** |
 
 **MAE (Mean Absolute Error)** measures the average absolute difference between predicted and actual parcel volumes. Lower is better.
 
-Gradient Boosting is currently the best model. It reduces the average absolute error by about **328 parcels per depot-day** compared with the 7-day baseline and by about **5.4%** compared with Random Forest.
+Enhanced Gradient Boosting is currently the best model. Adding longer lag features and rolling statistics reduced MAE by about **91.6 parcels per depot-day** compared with the first Gradient Boosting model, an improvement of about **10.7%**.
 
 ## Why this problem matters
 
@@ -57,7 +58,8 @@ logistics-parcel-volume-forecasting/
 ├── notebooks/
 │   ├── 01_baseline_and_linear_regression.ipynb
 │   ├── 02_random_forest.ipynb
-│   └── 03_gradient_boosting.ipynb
+│   ├── 03_gradient_boosting.ipynb
+│   └── 04_feature_engineering.ipynb
 └── src/
     └── generate_data.py
 ```
@@ -162,6 +164,37 @@ Gradient Boosting reaches a similar conclusion to Random Forest: `lag_7` is by f
 
 These importances describe the fitted model; they should not be interpreted as causal effects.
 
+### 8. Enhanced feature engineering
+
+The feature set is expanded with:
+
+- `lag_14`
+- `lag_28`
+- `rolling_mean_7`
+- `rolling_mean_28`
+
+The rolling features are shifted by one day before calculation to avoid using today's target value when predicting today.
+
+Using the same Gradient Boosting settings, the enhanced feature set reduces test MAE from **854.90** to **763.32**.
+
+#### Enhanced feature importance
+
+| Feature | Importance |
+|---|---:|
+| `lag_7` | **0.4214** |
+| `lag_14` | **0.2871** |
+| `is_bank_holiday` | 0.0962 |
+| `rolling_mean_7` | 0.0714 |
+| `lag_28` | 0.0607 |
+| `day_of_week_num` | 0.0216 |
+| `is_christmas_peak` | 0.0141 |
+| `is_black_friday_period` | 0.0123 |
+| `lag_1` | 0.0073 |
+| `month` | 0.0052 |
+| `rolling_mean_28` | 0.0027 |
+
+The new model relies less overwhelmingly on `lag_7`. `lag_14` contributes substantial additional signal, while the 7-day rolling average also helps capture recent demand levels. The 28-day rolling average contributes very little in this fitted model.
+
 ## Running the project
 
 Clone the repository and install the dependencies:
@@ -182,6 +215,7 @@ Then open the notebooks in order:
 notebooks/01_baseline_and_linear_regression.ipynb
 notebooks/02_random_forest.ipynb
 notebooks/03_gradient_boosting.ipynb
+notebooks/04_feature_engineering.ipynb
 ```
 
 Run each notebook from top to bottom.
@@ -190,7 +224,6 @@ Run each notebook from top to bottom.
 
 The next stages of the project will include:
 
-- additional rolling and lag features
 - more robust time-series validation
 - deeper model explainability
 - visual comparison of predictions vs actual demand
