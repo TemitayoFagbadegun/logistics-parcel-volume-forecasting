@@ -28,11 +28,12 @@ The current stage compares the baseline and successive ML models on the same uns
 | Linear Regression | 1,029.12 | ~13.0% |
 | Random Forest | 903.34 | ~23.6% |
 | Gradient Boosting | 854.90 | ~27.7% |
-| **Enhanced Gradient Boosting** | **763.32** | **~35.5%** |
+| Enhanced Gradient Boosting | 763.32 | ~35.5% |
+| **January-aware Gradient Boosting** | **761.13** | **~35.6%** |
 
 **MAE (Mean Absolute Error)** measures the average absolute difference between predicted and actual parcel volumes. Lower is better.
 
-Enhanced Gradient Boosting is currently the best model. Adding longer lag features and rolling statistics reduced MAE by about **91.6 parcels per depot-day** compared with the first Gradient Boosting model, an improvement of about **10.7%**.
+The January-aware Gradient Boosting model is currently the best model, but the improvement over the enhanced model is very small: **763.32 → 761.13 MAE** (about **0.3%**). The larger gain still came from adding richer lag and rolling features.
 
 ## Why this problem matters
 
@@ -59,7 +60,8 @@ logistics-parcel-volume-forecasting/
 │   ├── 01_baseline_and_linear_regression.ipynb
 │   ├── 02_random_forest.ipynb
 │   ├── 03_gradient_boosting.ipynb
-│   └── 04_feature_engineering.ipynb
+│   ├── 04_feature_engineering.ipynb
+│   └── 05_error_analysis.ipynb
 └── src/
     └── generate_data.py
 ```
@@ -195,6 +197,33 @@ Using the same Gradient Boosting settings, the enhanced feature set reduces test
 
 The new model relies less overwhelmingly on `lag_7`. `lag_14` contributes substantial additional signal, while the 7-day rolling average also helps capture recent demand levels. The 28-day rolling average contributes very little in this fitted model.
 
+### 9. Error analysis and January peak feature
+
+Error analysis showed that January had the highest monthly average absolute error at about **1,003.92 parcels**.
+
+Depot-level analysis also showed that **Depot A** was the hardest depot to predict:
+
+| Depot | MAE | Average signed error | Largest absolute error |
+|---|---:|---:|---:|
+| Depot A | **1,041.87** | **+330.61** | **6,159.06** |
+| Depot D | 737.05 | +38.93 | 3,305.83 |
+| Depot B | 683.09 | -26.45 | 2,880.68 |
+| Depot C | 591.27 | -42.50 | 2,477.28 |
+
+Positive signed error means the model tends to underpredict.
+
+A domain-informed feature was then added for the synthetic post-Christmas returns period:
+
+```python
+is_january_returns_peak = 1  # 1-10 January
+```
+
+This reduced MAE from **763.32** to **761.13**.
+
+The improvement was only about **0.3%**, suggesting that the January indicator alone does not explain much of the remaining error. This is still a useful result because it shows how error analysis can guide feature hypotheses and how those hypotheses should be validated rather than assumed to help.
+
+The next likely source of improvement is modelling **depot identity explicitly**, since error analysis shows clear performance differences between depots.
+
 ## Running the project
 
 Clone the repository and install the dependencies:
@@ -216,6 +245,7 @@ notebooks/01_baseline_and_linear_regression.ipynb
 notebooks/02_random_forest.ipynb
 notebooks/03_gradient_boosting.ipynb
 notebooks/04_feature_engineering.ipynb
+notebooks/05_error_analysis.ipynb
 ```
 
 Run each notebook from top to bottom.
